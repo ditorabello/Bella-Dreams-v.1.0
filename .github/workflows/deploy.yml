@@ -1,0 +1,60 @@
+# Workflow para fazer deploy do Next.js estático no GitHub Pages
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: ["main"]
+
+  # Permite rodar este workflow manualmente na aba Actions do GitHub
+  workflow_dispatch:
+
+# Define as permissões necessárias para o deploy no GitHub Pages
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Garante que apenas um deploy ocorra por vez
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout do código
+        uses: actions/checkout@v4
+
+      - name: Configurar o Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+
+      - name: Configurar ambiente do GitHub Pages
+        uses: actions/configure-pages@v5
+        with:
+          static_site_generator: next
+
+      - name: Instalar dependências
+        run: npm ci
+
+      - name: Build com Next.js (Exportação Estática)
+        run: npm run build
+
+      - name: Upload do artefato de build
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: ./out
+
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Realizar o Deploy no GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

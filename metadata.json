@@ -1,0 +1,12 @@
+{
+  "name": "Remix: Bella Dreams v.1.0",
+  "description": "Plataforma SaaS de Comercio Electrónico para Bella Dreams by Anabel en República Dominicana, con catálogo, carrito, métodos de entrega y panel administrativo.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone",
+    "geolocation"
+  ],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
