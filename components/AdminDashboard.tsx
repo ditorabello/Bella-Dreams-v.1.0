@@ -4,10 +4,37 @@ import React, { useState } from "react";
 import { 
   ClipboardList, CheckCircle2, Truck, AlertCircle, Search, 
   Trash2, RefreshCw, Smartphone, TrendingUp, DollarSign, Archive, Mail, Eye,
-  Heart, Plus, Edit, Star, Package, X, Lock, Check
+  Heart, Plus, Edit, Star, Package, X, Lock, Check, Upload, Sparkles
 } from "lucide-react";
 import { Order, NotificationItem, Product } from "../lib/types";
 import Image from "next/image";
+
+const PRESET_IMAGES = {
+  vestidos: [
+    { url: "https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=800&q=80", label: "Vestido Rojo Elegante" },
+    { url: "https://images.unsplash.com/photo-1539008885128-403476fa34a6?w=800&q=80", label: "Vestido Blanco Gala" },
+    { url: "https://images.unsplash.com/photo-1572804013309-59a88b7e92f1?w=800&q=80", label: "Vestido Floral" },
+    { url: "https://images.unsplash.com/photo-1612336307429-8a898d10e223?w=800&q=80", label: "Vestido Negro Chic" },
+  ],
+  calzados: [
+    { url: "https://images.unsplash.com/photo-1543163521-1bf539c55dd2?w=800&q=80", label: "Zapatos Tacón Color" },
+    { url: "https://images.unsplash.com/photo-1596609548086-85bbf8ddb6b9?w=800&q=80", label: "Tacón Rosa Lujo" },
+    { url: "https://images.unsplash.com/photo-1535043934128-cf0b28d52f95?w=800&q=80", label: "Sandalia Marrón" },
+    { url: "https://images.unsplash.com/photo-1603808033192-082d6919d3e1?w=800&q=80", label: "Tacón Negro Elegante" },
+  ],
+  fragancias: [
+    { url: "https://images.unsplash.com/photo-1541643600914-78b084683601?w=800&q=80", label: "Perfume Exclusivo" },
+    { url: "https://images.unsplash.com/photo-1592945403244-b3fbafd7f539?w=800&q=80", label: "Fragancia Floral" },
+    { url: "https://images.unsplash.com/photo-1523293182086-7651a899d37f?w=800&q=80", label: "Esencia Minimalista" },
+    { url: "https://images.unsplash.com/photo-1594035910387-fea47794261f?w=800&q=80", label: "Spray Fragancia" },
+  ],
+  accesorios: [
+    { url: "https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?w=800&q=80", label: "Collares Dorados" },
+    { url: "https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?w=800&q=80", label: "Pendientes Lujo" },
+    { url: "https://images.unsplash.com/photo-1617038260897-41a1f14a8ca0?w=800&q=80", label: "Pulseras Finas" },
+    { url: "https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?w=800&q=80", label: "Juego de Joyas" },
+  ],
+};
 
 interface AdminDashboardProps {
   orders: Order[];
@@ -73,6 +100,74 @@ export default function AdminDashboard({
   const [stock, setStock] = useState(10);
   const [featured, setFeatured] = useState(false);
   const [formError, setFormError] = useState("");
+
+  // Drag and drop states for image upload
+  const [dragActive, setDragActive] = useState(false);
+
+  const handleDrag = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.type === "dragenter" || e.type === "dragover") {
+      setDragActive(true);
+    } else if (e.type === "dragleave") {
+      setDragActive(false);
+    }
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragActive(false);
+    
+    const file = e.dataTransfer.files?.[0];
+    if (file && file.type.startsWith("image/")) {
+      processFile(file);
+    }
+  };
+
+  const handleImageFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      processFile(file);
+    }
+  };
+
+  const processFile = (file: File) => {
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const img = new window.Image();
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        const MAX_WIDTH = 500;
+        const MAX_HEIGHT = 500;
+        let width = img.width;
+        let height = img.height;
+
+        if (width > height) {
+          if (width > MAX_WIDTH) {
+            height *= MAX_WIDTH / width;
+            width = MAX_WIDTH;
+          }
+        } else {
+          if (height > MAX_HEIGHT) {
+            width *= MAX_HEIGHT / height;
+            height = MAX_HEIGHT;
+          }
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext("2d");
+        if (ctx) {
+          ctx.drawImage(img, 0, 0, width, height);
+          const compressedBase64 = canvas.toDataURL("image/jpeg", 0.75);
+          setImageInput(compressedBase64);
+        }
+      };
+      img.src = event.target?.result as string;
+    };
+    reader.readAsDataURL(file);
+  };
 
   // Orders Calculations
   const totalReceivedSales = orders
@@ -857,16 +952,102 @@ export default function AdminDashboard({
                     </label>
                   </div>
 
-                  {/* Image link */}
-                  <div className="sm:col-span-2 space-y-1">
-                    <label className="text-[10px] uppercase font-black text-gray-500 tracking-wider">URL da Imagem de Alta Qualidade (Unsplash, etc.)</label>
-                    <input
-                      type="text"
-                      value={imageInput}
-                      onChange={(e) => setImageInput(e.target.value)}
-                      placeholder="https://images.unsplash.com/photo-..."
-                      className="w-full text-xs p-2.5 border border-gray-200 rounded-lg focus:outline-hidden focus:border-[#D4AF37] font-mono"
-                    />
+                  {/* Image Selector & Upload Section */}
+                  <div className="sm:col-span-2 space-y-3 bg-white p-4 rounded-2xl border border-gray-150">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] uppercase font-black text-[#2C2623] tracking-wider flex items-center gap-1">
+                        <Sparkles className="w-3.5 h-3.5 text-[#D4AF37] fill-current" />
+                        Imagem do Produto (Carregar Foto ou Usar Preset)
+                      </span>
+                      {imageInput && (
+                        <button
+                          type="button"
+                          onClick={() => setImageInput("")}
+                          className="text-[9px] text-red-500 hover:underline font-semibold cursor-pointer"
+                        >
+                          Remover Imagem
+                        </button>
+                      )}
+                    </div>
+
+                    {/* Drag and Drop area & Preview Grid */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+                      
+                      {/* Upload Box */}
+                      <div 
+                        className={`relative border-2 border-dashed rounded-xl p-4 flex flex-col items-center justify-center text-center transition-all cursor-pointer ${
+                          dragActive 
+                            ? "border-[#D4AF37] bg-[#FAF6ED]/50" 
+                            : "border-gray-200 hover:border-gray-300 bg-gray-50"
+                        }`}
+                        onDragEnter={handleDrag}
+                        onDragOver={handleDrag}
+                        onDragLeave={handleDrag}
+                        onDrop={handleDrop}
+                        onClick={() => document.getElementById("admin-image-file-input")?.click()}
+                      >
+                        <input
+                          id="admin-image-file-input"
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={handleImageFileChange}
+                        />
+                        <Upload className="w-6 h-6 text-gray-400 mb-2" />
+                        <span className="text-xs font-semibold text-gray-700">Arraste uma foto aqui</span>
+                        <span className="text-[10px] text-gray-450 mt-1">Ou clique para escolher do seu dispositivo</span>
+                        <span className="text-[8px] bg-amber-50 text-[#D4AF37] font-bold px-1.5 py-0.5 rounded-md mt-2">COMPRESSÃO AUTOMÁTICA ATIVA</span>
+                      </div>
+
+                      {/* Current Selection / Preview details */}
+                      <div className="flex flex-col justify-center space-y-2.5">
+                        <span className="text-[9px] uppercase font-bold text-gray-400 font-sans">Presets Sugeridos para {category.toUpperCase()}</span>
+                        
+                        {/* Preset buttons */}
+                        <div className="grid grid-cols-4 gap-1.5">
+                          {(PRESET_IMAGES[category as keyof typeof PRESET_IMAGES] || PRESET_IMAGES.vestidos).map((preset, idx) => (
+                            <button
+                              key={idx}
+                              type="button"
+                              onClick={() => setImageInput(preset.url)}
+                              className={`relative aspect-square rounded-lg overflow-hidden border-2 transition-all cursor-pointer ${
+                                imageInput === preset.url ? "border-[#D4AF37] scale-95 shadow-xs" : "border-transparent opacity-80 hover:opacity-100"
+                              }`}
+                              title={preset.label}
+                            >
+                              {/* eslint-disable-next-line @next/next/no-img-element */}
+                              <img 
+                                src={preset.url} 
+                                alt={preset.label} 
+                                className="w-full h-full object-cover" 
+                              />
+                              {imageInput === preset.url && (
+                                <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+                                  <Check className="w-3.5 h-3.5 text-white stroke-[3]" />
+                                </div>
+                              )}
+                            </button>
+                          ))}
+                        </div>
+                        
+                        <div className="text-[9px] text-gray-400 italic leading-tight">
+                          Dica: Clique em qualquer miniatura acima para usar presets de estúdio de alta qualidade ou carregue a sua própria foto.
+                        </div>
+                      </div>
+
+                    </div>
+
+                    {/* Manual URL entry input */}
+                    <div className="pt-2 border-t border-gray-100">
+                      <label className="text-[9px] uppercase font-semibold text-gray-400 tracking-wider">Ou insira uma URL da Internet manualmente se preferir</label>
+                      <input
+                        type="text"
+                        value={imageInput}
+                        onChange={(e) => setImageInput(e.target.value)}
+                        placeholder="https://exemplo.com/sua-imagem.jpg"
+                        className="w-full text-xs p-2 border border-gray-200 rounded-lg mt-1 focus:outline-hidden focus:border-[#D4AF37] font-mono"
+                      />
+                    </div>
                   </div>
 
                   {/* Sizes (sizes tags) */}
